@@ -85,5 +85,10 @@
   "resolutions": {
     "@types/react": "18.2.0",
     "strip-ansi": "6.0.1"
+  },
+  "dependencies": {
+    "y-indexeddb": "9.0.12",
+    "y-webrtc": "10.3.0",
+    "yjs": "13.6.23"
   }
 }
