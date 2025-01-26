@@ -1,7 +1,7 @@
 import { PureComponent } from "react";
 import { CRDTEngine, type CRDTOperation } from "./crdt";
-import { ExcalidrawImperativeAPI } from "../../packages/excalidraw/types";
-import {
+import type { ExcalidrawImperativeAPI } from "../../packages/excalidraw/types";
+import type {
   ExcalidrawElement,
   NonDeletedExcalidrawElement,
 } from "../../packages/excalidraw/element/types";

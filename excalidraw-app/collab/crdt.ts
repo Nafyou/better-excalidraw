@@ -1,5 +1,5 @@
-import { ExcalidrawElement } from "../../packages/excalidraw/element/types";
-import { SocketId, Collaborator } from "../../packages/excalidraw/types";
+import type { ExcalidrawElement } from "../../packages/excalidraw/element/types";
+import type { SocketId, Collaborator } from "../../packages/excalidraw/types";
 
 export type CRDTOperation = 
   | { type: "element"; elements: ExcalidrawElement[]; version: number }
