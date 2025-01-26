@@ -104,7 +104,7 @@ import { ShareableLinkDialog } from "../packages/excalidraw/components/Shareable
 import { openConfirmModal } from "../packages/excalidraw/components/OverwriteConfirm/OverwriteConfirmState";
 import { OverwriteConfirmDialog } from "../packages/excalidraw/components/OverwriteConfirm/OverwriteConfirm";
 import Trans from "../packages/excalidraw/components/Trans";
-import { ShareDialog, shareDialogStateAtom } from "./share/ShareDialog";
+
 import CollabError, { collabErrorIndicatorAtom } from "./collab/CollabError";
 import type { RemoteExcalidrawElement } from "../packages/excalidraw/data/reconcile";
 import {
@@ -132,6 +132,7 @@ import DebugCanvas, {
 import { AIComponents } from "./components/AI";
 import { ExcalidrawPlusIframeExport } from "./ExcalidrawPlusIframeExport";
 import { isElementLink } from "../packages/excalidraw/element/elementLink";
+import ShareDialog from "./share/ShareDialog";
 
 polyfill();
 
@@ -196,6 +197,12 @@ const shareableLinkConfirmDialog = {
   color: "danger",
 } as const;
 
+// First, define the type for share dialog state
+type ShareDialogState = {
+  isOpen: boolean;
+  type: "collaborationOnly" | "share" | null;
+};
+
 const ExcalidrawWrapper = () => {
   const [errorMessage, setErrorMessage] = useState("");
   const isCollabDisabled = isRunningInIframe();
@@ -228,10 +235,14 @@ const ExcalidrawWrapper = () => {
   const [excalidrawAPI, excalidrawRefCallback] =
     useCallbackRefState<ExcalidrawImperativeAPI>();
 
-  const [, setShareDialogState] = useAtom(shareDialogStateAtom);
-  const [collabAPI] = useAtom(collabAPIAtom);
+  const [collabAPI, setCollabAPI] = useAtom(collabAPIAtom);
   const [isCollaborating] = useAtom(isCollaboratingAtom);
-  const collabError = useAtomValue(collabErrorIndicatorAtom);
+  const [shareDialogState, setShareDialogState] = useState<ShareDialogState>({
+    isOpen: false,
+    type: null,
+  });
+
+  const [collabError] = useAtom(collabErrorIndicatorAtom);
 
   useHandleLibrary({
     excalidrawAPI,
@@ -394,10 +405,19 @@ const ExcalidrawWrapper = () => {
 
   const isOffline = useAtomValue(isOfflineAtom);
 
-  const onCollabDialogOpen = useCallback(
-    () => setShareDialogState({ isOpen: true, type: "collaborationOnly" }),
-    [setShareDialogState],
-  );
+  const onCollabButtonClick = useCallback(() => {
+    setShareDialogState({
+      isOpen: true,
+      type: "collaborationOnly",
+    });
+  }, []);
+
+  const closeDialog = useCallback(() => {
+    setShareDialogState({
+      isOpen: false,
+      type: null,
+    });
+  }, []);
 
   // browsers generally prevent infinite self-embedding, there are
   // cases where it still happens, and while we disallow self-embedding
@@ -512,22 +532,9 @@ const ExcalidrawWrapper = () => {
         handleKeyboardGlobally={true}
         autoFocus={true}
         theme={editorTheme}
-        renderTopRightUI={(isMobile) => {
-          if (isMobile || !collabAPI || isCollabDisabled) {
-            return null;
-          }
-          return (
-            <div className="top-right-ui">
-              {collabError.message && <CollabError collabError={collabError} />}
-              <LiveCollaborationTrigger
-                isCollaborating={isCollaborating}
-                onSelect={() =>
-                  setShareDialogState({ isOpen: true, type: "share" })
-                }
-              />
-            </div>
-          );
-        }}
+        renderTopRightUI={() => (
+          <LiveCollaborationTrigger onSelect={onCollabButtonClick} />
+        )}
         onLinkOpen={(element, event) => {
           if (element.link && isElementLink(element.link)) {
             event.preventDefault();
@@ -536,7 +543,7 @@ const ExcalidrawWrapper = () => {
         }}
       >
         <AppMainMenu
-          onCollabDialogOpen={onCollabDialogOpen}
+          onCollabDialogOpen={onCollabButtonClick}
           isCollaborating={isCollaborating}
           isCollabEnabled={!isCollabDisabled}
           theme={appTheme}
@@ -544,7 +551,7 @@ const ExcalidrawWrapper = () => {
           refresh={() => forceRefresh((prev) => !prev)}
         />
         <AppWelcomeScreen
-          onCollabDialogOpen={onCollabDialogOpen}
+          onCollabDialogOpen={onCollabButtonClick}
           isCollabEnabled={!isCollabDisabled}
         />
         <OverwriteConfirmDialog>
@@ -584,25 +591,24 @@ const ExcalidrawWrapper = () => {
           />
         )}
         {!isCollabDisabled && excalidrawAPI && (
-          <Collab excalidrawAPI={excalidrawAPI} />
+          <Collab
+            excalidrawAPI={excalidrawAPI}
+            onCollabChange={(collab) => {
+              setCollabAPI(collab);
+              setShareDialogState((prev) => ({
+                isOpen: !!collab,
+                type: collab ? "collaborationOnly" : null,
+              }));
+            }}
+          />
         )}
 
-        <ShareDialog
-          collabAPI={collabAPI}
-          onExportToBackend={async () => {
-            if (excalidrawAPI) {
-              try {
-                await onExportToBackend(
-                  excalidrawAPI.getSceneElements(),
-                  excalidrawAPI.getAppState(),
-                  excalidrawAPI.getFiles(),
-                );
-              } catch (error: any) {
-                setErrorMessage(error.message);
-              }
-            }
-          }}
-        />
+        {shareDialogState.isOpen && (
+          <ShareDialog
+            onClose={() => setShareDialogState({ isOpen: false, type: null })}
+            activeRoomLink={window.location.href}
+          />
+        )}
 
         {errorMessage && (
           <ErrorDialog onClose={() => setErrorMessage("")}>
@@ -648,7 +654,10 @@ const ExcalidrawWrapper = () => {
                 if (collabAPI) {
                   collabAPI.stopCollaboration();
                   if (!collabAPI.isCollaborating()) {
-                    setShareDialogState({ isOpen: false });
+                    setShareDialogState({
+                      isOpen: false,
+                      type: null,
+                    });
                   }
                 }
               },

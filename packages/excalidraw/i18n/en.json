@@ -1,0 +1,11 @@
+{
+  "labels": {
+    "paste": "Paste",
+    "copy": "Copy",
+    "cut": "Cut",
+    "liveCollaboration": "Live Collaboration",
+    "liveCollaborationDescription": "Collaborate with others in real-time",
+    "startLiveCollaboration": "Start Live Session",
+    "copied": "Copied!"
+  }
+} 

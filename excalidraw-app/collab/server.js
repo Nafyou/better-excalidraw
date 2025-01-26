@@ -15,14 +15,28 @@ wss.on('connection', (ws) => {
     switch (msg.type) {
       case 'join':
         roomId = msg.roomId;
-        if (!rooms.has(roomId)) rooms.set(roomId, new Set());
+        if (!rooms.has(roomId)) {
+          rooms.set(roomId, new Set());
+        }
         rooms.get(roomId).add(ws);
+        // Send back room state to the joining user
+        ws.send(JSON.stringify({
+          type: 'room-state',
+          state: {
+            elements: [],
+            collaborators: Array.from(rooms.get(roomId)).map(client => client.id)
+          }
+        }));
+        // Notify others about the new user
         broadcast(roomId, { type: 'user-joined', userId: ws.id }, ws);
         break;
 
       case 'signal':
         const target = [...rooms.get(roomId)].find(client => client.id === msg.target);
-        target?.send(JSON.stringify(msg));
+        if (target) {
+          msg.sender = ws.id;
+          target.send(JSON.stringify(msg));
+        }
         break;
     }
   });
@@ -31,6 +45,9 @@ wss.on('connection', (ws) => {
     if (roomId && rooms.has(roomId)) {
       rooms.get(roomId).delete(ws);
       broadcast(roomId, { type: 'user-left', userId: ws.id });
+      if (rooms.get(roomId).size === 0) {
+        rooms.delete(roomId);
+      }
     }
   });
 });

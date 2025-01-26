@@ -108,7 +108,8 @@ export const isOfflineAtom = atom<boolean>(false);
 export const activeRoomLinkAtom = atom<string | null>(null);
 
 interface CollabProps {
-  excalidrawAPI: NonNullable<ExcalidrawImperativeAPI>;
+  excalidrawAPI: ExcalidrawImperativeAPI;
+  onCollabChange: (collab: CollabAPI | null) => void;
 }
 
 interface CollabState {
@@ -151,12 +152,26 @@ class Collab
       this.ws.onmessage = async (event) => {
         const msg = JSON.parse(event.data);
         switch (msg.type) {
+          case "room-state":
+            this.setCollaborators(msg.state.collaborators);
+            if (msg.state.elements) {
+              this.props.excalidrawAPI.updateScene({
+                elements: msg.state.elements,
+                collaborators: this.collaborators,
+                storeAction: StoreAction.UPDATE,
+              });
+            }
+            break;
           case "user-joined":
-            if (msg.userId !== this.userId)
-              this.createPeerConnection(msg.userId);
+            if (msg.userId !== this.userId) {
+              await this.createPeerConnection(msg.userId);
+              this.updateCollaboratorsCount();
+            }
             break;
           case "user-left":
             this.peerConnections.get(msg.userId)?.close();
+            this.collaborators.delete(msg.userId);
+            this.updateCollaboratorsCount();
             break;
           case "signal":
             this.handleSignal(msg);
@@ -169,6 +184,7 @@ class Collab
           JSON.stringify({
             type: "join",
             roomId: this.roomId,
+            userId: this.userId,
           }),
         );
       };
@@ -414,6 +430,14 @@ class Collab
 
   getUsername = () => {
     return this.state.username;
+  };
+
+  private updateCollaboratorsCount = () => {
+    const isCollaborating = this.dataChannels.size > 0;
+    this.props.onCollabChange?.(isCollaborating ? this : null);
+    this.props.excalidrawAPI.updateScene({
+      collaborators: this.collaborators,
+    });
   };
 
   render() {

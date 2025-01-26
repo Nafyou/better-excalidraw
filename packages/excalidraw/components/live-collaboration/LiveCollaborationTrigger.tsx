@@ -1,21 +1,19 @@
 import { t } from "../../i18n";
 import { share } from "../icons";
 import { Button } from "../Button";
-
 import clsx from "clsx";
-
 import "./LiveCollaborationTrigger.scss";
 import { useUIAppState } from "../../context/ui-appState";
-
+import { useAtom } from "../../editor-jotai";
+import { isCollaboratingAtom } from "excalidraw-app/collab/Collab";
 const LiveCollaborationTrigger = ({
-  isCollaborating,
   onSelect,
   ...rest
 }: {
-  isCollaborating: boolean;
   onSelect: () => void;
 } & React.ButtonHTMLAttributes<HTMLButtonElement>) => {
   const appState = useUIAppState();
+  const [isCollaborating] = useAtom(isCollaboratingAtom);
 
   const showIconOnly = appState.width < 830;
 

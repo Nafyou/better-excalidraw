@@ -18,7 +18,16 @@
 
     flex-shrink: 0;
 
-    // double .active to force specificity
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+
+    &.active {
+      background: var(--color-primary-light);
+      border-color: var(--color-primary);
+    }
+
     &.active.active {
       background-color: #0fb884;
       border-color: #0fb884;
@@ -45,22 +54,17 @@
   }
 
   .CollabButton-collaborators {
-    :root[dir="ltr"] & {
-      right: -5px;
-    }
-    :root[dir="rtl"] & {
-      left: -5px;
-    }
-    min-width: 1em;
-    min-height: 1em;
-    line-height: 1;
     position: absolute;
-    bottom: -5px;
-    padding: 3px;
+    top: -8px;
+    right: -8px;
+    background: var(--color-primary);
+    color: white;
     border-radius: 50%;
-    background-color: $oc-green-2;
-    color: $oc-green-9;
-    font-size: 0.6rem;
-    font-family: "Cascadia";
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
   }
 }
