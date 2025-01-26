@@ -21,14 +21,22 @@ import { activeRoomLinkAtom } from "../collab/Collab";
 import { useUIAppState } from "../../packages/excalidraw/context/ui-appState";
 import { useCopyStatus } from "../../packages/excalidraw/hooks/useCopiedIndicator";
 import { atom, useAtom, useAtomValue } from "../app-jotai";
+import type {
+  ShareDialogType,
+  OnExportToBackend,
+  CollaboratorData,
+  ShareDialogState,
+} from "../collab/types";
 
 import "./ShareDialog.scss";
 
-type OnExportToBackend = () => void;
-type ShareDialogType = "share" | "collaborationOnly";
-
 export const shareDialogStateAtom = atom<
-  { isOpen: false } | { isOpen: true; type: ShareDialogType }
+  | { isOpen: false }
+  | {
+      isOpen: true;
+      type: ShareDialogType;
+      activeRoomLink?: string;
+    }
 >({ isOpen: false });
 
 const getShareIcon = () => {
@@ -45,22 +53,25 @@ const getShareIcon = () => {
   return share;
 };
 
-export type ShareDialogProps = {
+export interface ShareDialogProps {
   collabAPI: CollabAPI | null;
   handleClose: () => void;
   onExportToBackend: OnExportToBackend;
   type: ShareDialogType;
-};
+  activeRoomLink?: string;
+}
+
+interface ActiveRoomDialogProps {
+  collabAPI: CollabAPI;
+  activeRoomLink?: string;
+  handleClose: () => void;
+}
 
 const ActiveRoomDialog = ({
   collabAPI,
   activeRoomLink,
   handleClose,
-}: {
-  collabAPI: CollabAPI;
-  activeRoomLink: string;
-  handleClose: () => void;
-}) => {
+}: ActiveRoomDialogProps) => {
   const { t } = useI18n();
   const [, setJustCopied] = useState(false);
   const timerRef = useRef<number>(0);
@@ -70,7 +81,7 @@ const ActiveRoomDialog = ({
 
   const copyRoomLink = async () => {
     try {
-      await copyTextToSystemClipboard(activeRoomLink);
+      await copyTextToSystemClipboard(activeRoomLink || null);
     } catch (e) {
       collabAPI.setCollabError(t("errors.copyToSystemClipboardFailed"));
     }
@@ -89,6 +100,10 @@ const ActiveRoomDialog = ({
   };
 
   const shareRoomLink = async () => {
+    if (!activeRoomLink) {
+      return;
+    }
+
     try {
       await navigator.share({
         title: t("roomDialog.shareTitle"),
@@ -99,6 +114,10 @@ const ActiveRoomDialog = ({
       // Just ignore.
     }
   };
+
+  if (!activeRoomLink) {
+    return null;
+  }
 
   return (
     <>
@@ -177,7 +196,6 @@ const ActiveRoomDialog = ({
 
 const ShareDialogPicker = (props: ShareDialogProps) => {
   const { t } = useI18n();
-
   const { collabAPI } = props;
 
   const startCollabJSX = collabAPI ? (
@@ -198,7 +216,7 @@ const ShareDialogPicker = (props: ShareDialogProps) => {
           icon={playerPlayIcon}
           onClick={() => {
             trackEvent("share", "room creation", `ui (${getFrame()})`);
-            collabAPI.startCollaboration(null);
+            collabAPI.startCollaboration(undefined);
           }}
         />
       </div>
@@ -242,14 +260,15 @@ const ShareDialogPicker = (props: ShareDialogProps) => {
 };
 
 const ShareDialogInner = (props: ShareDialogProps) => {
-  const activeRoomLink = useAtomValue(activeRoomLinkAtom);
+  const { t } = useI18n();
+  const { collabAPI, activeRoomLink } = props;
 
   return (
     <Dialog size="small" onCloseRequest={props.handleClose} title={false}>
       <div className="ShareDialog">
-        {props.collabAPI && activeRoomLink ? (
+        {collabAPI && activeRoomLink ? (
           <ActiveRoomDialog
-            collabAPI={props.collabAPI}
+            collabAPI={collabAPI}
             activeRoomLink={activeRoomLink}
             handleClose={props.handleClose}
           />
@@ -266,7 +285,6 @@ export const ShareDialog = (props: {
   onExportToBackend: OnExportToBackend;
 }) => {
   const [shareDialogState, setShareDialogState] = useAtom(shareDialogStateAtom);
-
   const { openDialog } = useUIAppState();
 
   useEffect(() => {
@@ -285,6 +303,7 @@ export const ShareDialog = (props: {
       collabAPI={props.collabAPI}
       onExportToBackend={props.onExportToBackend}
       type={shareDialogState.type}
+      activeRoomLink={shareDialogState.activeRoomLink}
     />
   );
 };

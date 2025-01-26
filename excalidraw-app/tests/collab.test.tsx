@@ -12,8 +12,15 @@ import {
   createUndoAction,
 } from "../../packages/excalidraw/actions/actionHistory";
 import { StoreAction, newElementWith } from "../../packages/excalidraw";
+import type { CollabAPI } from "../collab/Collab";
 
 const { h } = window;
+
+declare global {
+  interface Window {
+    collab: CollabAPI;
+  }
+}
 
 Object.defineProperty(window, "crypto", {
   value: {
@@ -113,7 +120,7 @@ describe("collaboration", () => {
     });
 
     // one form of force deletion happens when starting the collab, not to sync potentially sensitive data into the server
-    window.collab.startCollaboration(null);
+    window.collab?.startCollaboration();
 
     await waitFor(() => {
       expect(API.getUndoStack().length).toBe(2);

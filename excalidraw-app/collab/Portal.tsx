@@ -106,6 +106,29 @@ class Portal {
         elements: this.collab.excalidrawAPI.getSceneElementsIncludingDeleted(),
         files: this.collab.excalidrawAPI.getFiles(),
       });
+
+      let isChanged = false;
+      const newElements = this.collab.excalidrawAPI
+        .getSceneElementsIncludingDeleted()
+        .map((element) => {
+          if (this.collab.fileManager.shouldUpdateImageElementStatus(element)) {
+            isChanged = true;
+            // Instead of using newElementWith, directly update the element
+            return {
+              ...element,
+              updated: Date.now(),
+              version: element.version + 1,
+            };
+          }
+          return element;
+        });
+
+      if (isChanged) {
+        this.collab.excalidrawAPI.updateScene({
+          elements: newElements,
+          storeAction: StoreAction.UPDATE,
+        });
+      }
     } catch (error: any) {
       if (error.name !== "AbortError") {
         this.collab.excalidrawAPI.updateScene({
@@ -114,27 +137,6 @@ class Portal {
           },
         });
       }
-    }
-
-    let isChanged = false;
-    const newElements = this.collab.excalidrawAPI
-      .getSceneElementsIncludingDeleted()
-      .map((element) => {
-        if (this.collab.fileManager.shouldUpdateImageElementStatus(element)) {
-          isChanged = true;
-          // this will signal collaborators to pull image data from server
-          // (using mutation instead of newElementWith otherwise it'd break
-          // in-progress dragging)
-          return newElementWith(element, { status: "saved" });
-        }
-        return element;
-      });
-
-    if (isChanged) {
-      this.collab.excalidrawAPI.updateScene({
-        elements: newElements,
-        storeAction: StoreAction.UPDATE,
-      });
     }
   }, FILE_UPLOAD_TIMEOUT);
 
