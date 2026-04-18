@@ -424,6 +424,16 @@ export const TextSizeIcon = createIcon(
   tablerIconProps,
 );
 
+export const MathSymbolIcon = createIcon(
+  <g stroke="currentColor" strokeWidth="1.5" fill="none">
+    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+    <path d="M5 5h9l-6 14h-2" />
+    <path d="M14 5h5" />
+    <path d="M13 12h7" />
+  </g>,
+  tablerIconProps,
+);
+
 // modified tabler-icons: photo
 export const ImageIcon = createIcon(
   <g strokeWidth="1.25">

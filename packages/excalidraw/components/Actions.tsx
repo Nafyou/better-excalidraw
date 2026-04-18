@@ -78,11 +78,13 @@ import {
   roundArrowIcon,
   elbowArrowIcon,
   TextSizeIcon,
+  MathSymbolIcon,
   adjustmentsIcon,
   DotsHorizontalIcon,
   SelectionIcon,
   pencilIcon,
 } from "./icons";
+import { MathSymbolPickerContent } from "./MathSymbolPicker";
 
 import { Island } from "./Island";
 
@@ -605,6 +607,94 @@ const CombinedTextProperties = ({
   );
 };
 
+const MathSymbolsAction = ({
+  appState,
+  setAppState,
+  targetElements,
+  container,
+  app,
+}: {
+  appState: UIAppState;
+  setAppState: React.Component<any, AppState>["setState"];
+  targetElements: ExcalidrawElement[];
+  container: HTMLDivElement | null;
+  app: AppClassProperties;
+}) => {
+  const { saveCaretPosition, restoreCaretPosition } = useTextEditorFocus();
+  const isOpen = appState.openPopup === "mathSymbols";
+
+  return (
+    <div className="compact-action-item">
+      <Popover.Root
+        open={isOpen}
+        onOpenChange={(open) => {
+          if (open) {
+            if (appState.editingTextElement) {
+              saveCaretPosition();
+            }
+            setAppState({ openPopup: "mathSymbols" });
+          } else {
+            setAppState({ openPopup: null });
+            if (appState.editingTextElement) {
+              restoreCaretPosition();
+            }
+          }
+        }}
+      >
+        <Popover.Trigger asChild>
+          <button
+            type="button"
+            className={clsx("compact-action-button properties-trigger", {
+              active: isOpen,
+            })}
+            title={t("labels.mathSymbols")}
+            // keep wysiwyg focus/caret when clicking the trigger
+            onMouseDown={(e) => {
+              if (appState.editingTextElement) {
+                e.preventDefault();
+              }
+            }}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+
+              if (isOpen) {
+                setAppState({ openPopup: null });
+              } else {
+                if (appState.editingTextElement) {
+                  saveCaretPosition();
+                }
+                setAppState({ openPopup: "mathSymbols" });
+              }
+            }}
+          >
+            {MathSymbolIcon}
+          </button>
+        </Popover.Trigger>
+        {isOpen && (
+          <PropertiesPopover
+            className={PROPERTIES_CLASSES}
+            container={container}
+            style={{ maxWidth: "18rem" }}
+            preventAutoFocusOnTouch={!!appState.editingTextElement}
+            onClose={() => {
+              if (appState.editingTextElement) {
+                restoreCaretPosition();
+              }
+            }}
+          >
+            <MathSymbolPickerContent
+              app={app}
+              appState={appState}
+              targetElements={targetElements}
+            />
+          </PropertiesPopover>
+        )}
+      </Popover.Root>
+    </div>
+  );
+};
+
 const CombinedExtraActions = ({
   appState,
   renderAction,
@@ -864,6 +954,13 @@ export const CompactShapeActions = ({
             container={container}
             elementsMap={elementsMap}
           />
+          <MathSymbolsAction
+            appState={appState}
+            setAppState={setAppState}
+            targetElements={targetElements}
+            container={container}
+            app={app}
+          />
         </>
       )}
 
@@ -998,6 +1095,13 @@ export const MobileShapeActions = ({
               targetElements={targetElements}
               container={container}
               elementsMap={elementsMap}
+            />
+            <MathSymbolsAction
+              appState={appState}
+              setAppState={setAppState}
+              targetElements={targetElements}
+              container={container}
+              app={app}
             />
           </>
         )}

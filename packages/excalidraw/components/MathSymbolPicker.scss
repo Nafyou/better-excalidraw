@@ -1,0 +1,86 @@
+.math-symbol-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 17rem;
+  max-width: 17rem;
+
+  &__title {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-text-secondary, var(--color-on-surface));
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 0;
+  }
+
+  &__tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+  }
+
+  &__tab {
+    font-size: 0.72rem;
+    font-weight: 500;
+    padding: 0.25rem 0.4rem;
+    border: 1px solid transparent;
+    border-radius: var(--border-radius-md, 4px);
+    background: transparent;
+    color: var(--color-on-surface);
+    cursor: pointer;
+    line-height: 1;
+
+    &:hover {
+      background: var(--button-hover-bg, rgba(0, 0, 0, 0.05));
+    }
+
+    &.active {
+      background: var(
+        --color-surface-primary-container,
+        var(--color-primary-light, rgba(99, 102, 241, 0.15))
+      );
+      border-color: var(--color-primary, transparent);
+    }
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 0.125rem;
+    max-height: 14rem;
+    overflow-y: auto;
+    padding: 0.125rem;
+  }
+
+  &__symbol {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    min-height: 1.75rem;
+    border: 1px solid transparent;
+    border-radius: var(--border-radius-md, 4px);
+    background: transparent;
+    color: var(--color-on-surface);
+    font-size: 1rem;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0;
+    font-family: "Cambria Math", "Latin Modern Math", "STIX Two Math",
+      "Times New Roman", serif;
+
+    &:hover {
+      background: var(--button-hover-bg, rgba(0, 0, 0, 0.06));
+      border-color: var(--button-border, transparent);
+    }
+
+    &:active {
+      background: var(
+        --color-surface-primary-container,
+        var(--color-primary-light, rgba(99, 102, 241, 0.15))
+      );
+    }
+  }
+}
